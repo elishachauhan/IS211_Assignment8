@@ -2,230 +2,374 @@
 # -*- coding: utf-8 -*-
 """A small docstring for Assignment 8"""
 
-
-import sys
 import argparse
+import random
 import time
-from random import randint, seed
 
-seed(0)
+class Player:
 
-class Die():
-    """The Die class."""
+    def __init__(self, identity):
 
-    def roll(self):
-        """Roll the die."""
+        self.identityEnc = identity
+        self.scoreEnc = 0     
+        self.tempScore = 0    
+        self.tempScorePrev = 0   
+        self.isWinnerEnc = False
 
-        number = randint(1, 6)
-        return number
+    def identity(self):
 
+        return self.identityEnc
 
+    def score(self):
 
-class Player():
-   
-    def __init__(self):
-        """Player constructor method."""
+        return self.scoreEnc
 
-        self.total_score = 0
-        self.running_score = 0
-        self.this_roll = 0
+    def subtract_from_score(self, sub):
 
+        self.scoreEnc -= sub
 
-    def show_running_score(self):
-        """Show running score.
+    def previous_hold_score(self):
 
-        Returns:
-            running_score (int): Current running score.
-        """
+        return self.tempScorePrev
 
-        return self.running_score
+    def is_winner(self):
 
+        return self.isWinnerEnc
 
-    def set_running_score(self, this_roll):
-        """Set running score.
+    def make_winner(self):
 
-        Args:
-            this_roll (int): Current number rolled.
+        self.isWinnerEnc = True
 
-        Returns:
-            running_score (int): Current running score.
-        """
+    def roll_die(self):
+        random.seed(time.time())
+        current_roll = int(random.random() * 6) + 1
+        self.tempScore += current_roll
 
-        if this_roll != 1:
-            self.running_score += this_roll
-        else:
-            self.running_score = 0
+        if current_roll == 1:
+            print " _____\n|     | Rolled: 1\n|  *  | ALL POINTS LOST," \
+                  " YOUR TURN IS OVER.\n|_____|\n"
 
-        return self.running_score
+        elif current_roll == 2:
+            print " _____\n|     | Rolled: 2\n| * * | Points this " \
+                  "Round: %i\n|_____|\n" % self.tempScore
 
+        elif current_roll == 3:
+            print " _____\n|    *| Rolled: 3\n|  *  | Points this " \
+                  "Round: %i\n|*____|\n" % self.tempScore
 
-    def show_total_score(self):
-        """Show total score.
+        elif current_roll == 4:
+            print " _____\n|*   *| Rolled: 4\n|     | Points this " \
+                  "Round: %i\n|*___*|\n" % self.tempScore
 
-        Returns:
-            total_score (int): Current total score.
-        """
+        elif current_roll == 5:
+            print " _____\n|*   *| Rolled: 5\n|  *  | Points this " \
+                  "Round: %i\n|*___*|\n" % self.tempScore
 
-        return self.total_score
+        elif current_roll == 6:
+            print " _____\n|*   *| Rolled: 6\n|*   *| Points this " \
+                  "Round: %i\n|*___*|\n" % self.tempScore
 
-
-    def set_total_score(self, running_score):
-        """Set total score.
-
-        Args:
-            running_score (int): Current running score.
-
-        Returns:
-            total_score (int): Current total score.
-        """
-
-        self.total_score += running_score
-        self.running_score = 0
-
-        return self.total_score
+        return current_roll
 
 
-    def roll_or_hold(self):
-        """Roll or hold."""
-    
-        self.choice = raw_input("(r)oll or (h)old: ")
+    def decide(self, rolled_value):
 
+        if rolled_value == 1:
+            self.tempScore = 0
+            print "PLAYER %i'S SCORE IS NOW %i\n" % \
+                  (self.identity(), self.scoreEnc)
+            return 1
+
+        if self.tempScore + self.scoreEnc >= 100:
+            print "Total points      : %i" % \
+                  (self.tempScore+self.scoreEnc)
+            print "\n********************\n      PLAYER %i      \n" \
+                  "      %i points      \n   IS THE WINNER    \n" \
+                  "********************" % (self.identity(),
+                                            self.tempScore+self.scoreEnc)
+            self.isWinnerEnc = True
+            return 0
+
+        decision = raw_input("Type 'r' for roll and 'h' for hold. "
+                             "Decision: ")
+
+        while decision != "r" and decision != "h":
+            decision = raw_input("Error. Please only type 'r' for roll "
+                                 "and 'h' for hold. Decision: ")
+
+        if decision == "h":
+            self.scoreEnc += self.tempScore
+            self.tempScorePrev = self.tempScore
+            self.tempScore = 0
+            print "PLAYER %i'S SCORE IS NOW %i\n" % \
+                  (self.identity(), self.scoreEnc)
+            return 2
+
+        if decision == "r":
+            return 3
+
+        print ""
 
 
 class ComputerPlayer(Player):
 
-    def __init__(self):
-        self.name = None
-        Player.__init__(self)
+    def decide(self, rolled_value):
 
+        if rolled_value == 1:
+            self.tempScore = 0
+            print "PLAYER %i'S SCORE IS NOW %i\n" % \
+                  (self.identity(), self.scoreEnc)
+            return 1
 
-    def roll_or_hold(self):
-        """Function to determine roll or hold."""
-        hold_25 = 25
-        hold_100 = 100 - self.running_score
+        if self.tempScore+self.scoreEnc >= 100:
+            print "\n********************\n      PLAYER %i      \n" \
+                  "      %i points      \n   IS THE WINNER    \n" \
+                  "********************" % (self.identity(),
+                                            self.tempScore+self.scoreEnc)
+            self.isWinnerEnc = True
+            return 0
 
-        if hold_25 < hold_100:
-            hold_score = hold_25
+        decision = "h"
+
+        """While the score is below 75, hold whenever the computer player
+        reaches 25 and above. While the score is 75 and above, hold when-
+        ever the computer player's score reaches 100 - (temporary round
+        score)."""
+        if (100 - self.scoreEnc) >= 25:
+            if self.tempScore < 25:
+                decision = "r"
         else:
-            hold_score = hold_100
+            if self.tempScore < (100 - self.scoreEnc):
+                decision = "r"
 
-        if self.running_score < hold_score:
-            self.choice = "r"
-        elif self.running_score >= hold_score:
-            self.choice = "h"
+        """Hold will add the score to the player's total score and yield
+        the turn to another player."""
+        if decision == "h":
+            print "  Computer has decided to HOLD."
+            self.scoreEnc += self.tempScore
+            self.tempScorePrev = self.tempScore
+            self.tempScore = 0
+            print "PLAYER %i'S SCORE IS NOW %i\n" % (self.identity(),
+                                                     self.scoreEnc)
+            return 2
 
+        if decision == "r":
+            print "  Computer has decided to ROLL."
+            return 3
 
-
-class HumanPlayer(Player):
-
-    def __init__(self):
-        self.name = None
-        Player.__init__(self)
-
-
-
-class PlayerFactory():
-
-    def __init__(self, player):
-        if player == "human":
-            self.playerObj = HumanPlayer()
-        if player == "computer":
-            self.playerObj = ComputerPlayer()
+        print ""
 
 
-class Game():
+class PlayerFactory:
 
-    def __init__(self, player1_type, player2_type, timed):
-        """Game class constuctor function.
+    def get_player(self, identity, type_of_player):
 
-        args:
-            player1_type (str): human | computer
-            player2_type (str): human | computer
-            timed (boolean):    Timed or not timed
-        """
+        if type_of_player == "computer":
+            return ComputerPlayer(identity)
 
-        self.player1_type = player1_type
-        self.player2_type = player2_type
-        self.timed = timed
-
-        self.player1 = PlayerFactory(self.player1_type)
-        self.player2 = PlayerFactory(self.player2_type)
+        if type_of_player == "human":
+            return Player(identity)
 
 
-        self.player_list = ['self.player1', 'self.player2']
+class Game:
+ 
+    def __init__(self, player1, player2):
 
-        self.first_player_index = randint(0, len(self.player_list)-1)
-        self.player_list = self.player_list[self.first_player_index:] + self.player_list[:self.first_player_index]
+        self.listOfPlayers = []
+        self.listOfPlayers.append(player1)
+        self.listOfPlayers.append(player2)
 
-        self.player_turn = 0
+    def number_of_players(self):
 
-    def play_game(self):
-        """The play_gaeme function executes the game."""
-        
-        #print ("Player1 = ", self.player1.playerObj)
-        #print ("Player2 = ", self.player2.playerObj)
+        return len(self.listOfPlayers)
 
-        while self.player1.playerObj.total_score < 100 and self.player2.playerObj.total_score < 100:
-            player = self.player_list[self.player_turn]
-            while True:
-                print "Now playing: {}".format(player)
-                eval(player).playerObj.roll_or_hold()
-                if eval(player).playerObj.choice == "r":
-                    this_turn = Die()
-                    this_roll = this_turn.roll()
-                    print "roll is: {}".format(this_roll)
+    def player_list(self):
 
-                    running_score = eval(player).playerObj.set_running_score(this_roll)
-                    print "({}) Running Score is: {}".format(player, running_score)
-                    total_score = eval(player).playerObj.show_total_score()
-                    print "({}) Total Score is: {}".format(player, total_score)
-                    if running_score == 0:
+        return self.listOfPlayers
+
+    def roll_game_die(self, player):
+
+        return player.roll_die()
+
+    def decide(self, roll_die_value, player):
+
+        return player.decide(roll_die_value)
+
+    def reset_game(self):
+
+        for x in range(0,len(self.listOfPlayers)):
+            self.listOfPlayers.pop()
+
+
+class TimedGameProxy(Game):
+
+    def __init__(self, playerA, playerB):
+
+        self.listOfPlayers = []
+        self.startTime = time.time()
+        self.listOfPlayers.append(playerA)
+        self.listOfPlayers.append(playerB)
+
+
+    def start_game(self):
+
+        winner = 0
+        result = 3
+        exists_no_winner = True
+
+        while exists_no_winner and (60 - (time.time()-self.startTime)) > 0:
+
+            for player in self.listOfPlayers:
+
+                print "********************\n      PLAYER %i      " \
+                      "\n      %i points\n********************" % \
+                      (player.identity(), player.score())
+
+                """From PLAYER's decide() function:
+
+                0 = won game; game will be finished
+                1 = lose turn; give the other player a turn
+                2 = hold; give the other player a turn
+                3 = roll; turn is yielded back to current player
+                4 = ran out of time; game will be finished
+                """
+                while result == 3:
+                    print "SECONDS LEFT: %f" % (60 - (time.time()
+                                                      -self.startTime))
+                    if (60 - (time.time()-self.startTime)) < 0:
+                        result = 4
+                        print "GAME OVER: Time is up!"
                         break
-
-                if eval(player).playerObj.choice == "h":
-                    total_score = eval(player).playerObj.set_total_score(running_score)
-                    print "{} Total Score is: {}".format(player, total_score)
-                    break
-            
-            if self.timed:
-                if time.time() - 60 > TimedProxy.start_time:
-                    if self.player1.playerObj.total_score > self.player2.playerObj.total_score:
-                        winner = "Player1"
                     else:
-                        winner = "player2"
-                    print ("Time is up! The winner is {}!").format(winner)
+                        resulting_face = self.roll_game_die(player)
+
+                    print "SECONDS LEFT: %f" % (60 - (time.time()
+                                                      -self.startTime))
+                    if (60 - (time.time()-self.startTime)) < 0:
+                        result = 4
+                        print "GAME OVER: Time is up!"
+                        break
+                    else:
+                        result = self.decide(resulting_face, player)
+
+                        if (60 - (time.time()-self.startTime)) < 0:
+                            print "GAME OVER: Time is up!"
+
+
+                            if result == 2:
+                                prev_score = player.previous_hold_score()
+                                overtime = (time.time()-self.startTime) - 60
+                                print "ALERT: Cannot add %i points since" \
+                                      " game is already over by %f secon" \
+                                      "ds." % (prev_score, overtime)
+                                player.subtract_from_score(
+                                    player.previous_hold_score())
+
+                            result = 4
+                            break
+
+                if result == 4:
+                    if self.listOfPlayers[0].score() > \
+                            self.listOfPlayers[1].score():
+                        self.listOfPlayers[0].make_winner()
+                        winner = "1"
+                    elif self.listOfPlayers[0].score() < \
+                            self.listOfPlayers[1].score():
+                        self.listOfPlayers[1].make_winner()
+                        winner = "2"
+                    else:
+                        self.listOfPlayers[0].make_winner()
+                        self.listOfPlayers[1].make_winner()
+                        winner = "1 & 2"
+                    exists_no_winner = False
+                    print "\n********************\n      PLAYER %s      " \
+                          "\n   IS THE WINNER    \n********************" \
+                          "\nPlayer 1 Points: %i\nPlayer 2 Points: %i" % \
+                          (winner, self.listOfPlayers[0].score(),
+                           self.listOfPlayers[1].score())
                     break
 
-            if total_score >= 100:
-                print "The winner is {}!".format(player)
-            else:
-                print "\nNow switching Players...\n"
-            
-            if self.player_turn == 0:
-                self.player_turn = 1
-            else:
-                self.player_turn = 0
-            
+                if result == 0:
+                    exists_no_winner = False
+                    break
 
-class TimedProxy(Game):
-
-        start_time = time.time()
+                result = 3
 
 
 def main():
 
-    parser = argparse.ArgumentParser(description='Player Types')
-    parser.add_argument('--player1', default="human")
-    parser.add_argument('--player2', default="computer")
-    parser.add_argument('--timed', default="False")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--player1", help="Indicate if player 1 is 'human'"
+                                          " or 'computer'.")
+    parser.add_argument("--player2", help="Indicate if player 2 is 'human'"
+                                          " or 'computer'.")
+    parser.add_argument("--timed", help="Indicate if game is timed to 60"
+                                        " seconds. Type 'yes' or 'no'.")
+
     args = parser.parse_args()
-    
-    if args.timed is True:
-        game = TimedProxy(args.player1, args.player2, args.timed)
-        game.play_game()
-    else:
-        game = Game(args.player1, args.player2, args.timed)
-        game.play_game()
+
+    try:
+        player1_choice = args.player1.lower()
+        player2_choice = args.player2.lower()
+        timed_game = args.timed.lower()
+
+    except AttributeError:
+        print "ALERT: You need to choose 'human' or 'computer' for " \
+              "players and 'yes' or 'no' for a timed version."
+        exit(1)
+
+    if player1_choice != "human" and player1_choice != "computer":
+        print "ALERT: You need to type 'human' or 'player' for --player1."
+        exit(1)
+    if player2_choice != "human" and player2_choice != "computer":
+        print "ALERT: You need to type 'human' or 'player' for --player2."
+        exit(1)
+    if timed_game != "yes" and timed_game != "no":
+        print "ALERT: You need to type 'yes' or 'no' for --timed. "
+        exit(1)
+
+    factory = PlayerFactory()
+    player1 = factory.get_player(1, player1_choice)
+    player2 = factory.get_player(2, player2_choice)
+
+    print "\n==================================================\n" \
+          "                BEGINNING PIG GAME                \n" \
+          "=================================================="
+
+    if timed_game == "yes":
+        print "TIMED VERSION\n"
+        timed_game = TimedGameProxy(player1, player2)
+        timed_game.start_game()
+        timed_game.reset_game()
+
+    elif timed_game == "no":
+        game1 = Game(player1, player2)
+
+        exists_no_winner = True
+        result = 3
+
+        while exists_no_winner:
+
+            for player in game1.player_list():
+                print "********************\n      PLAYER %i      " \
+                      "\n      %i points\n********************" % \
+                      (player.identity(), player.score())
+
+                while result == 3:
+                    resulting_face = game1.roll_game_die(player)
+                    result = game1.decide(resulting_face, player)
+
+                if result == 0:
+                    exists_no_winner = False
+                    break
+
+                result = 3
+
+        game1.reset_game()
+
+    print "\n==================================================\n" \
+          "                     GAME END                     \n" \
+          "==================================================\n"
 
 
 if __name__ == "__main__":
